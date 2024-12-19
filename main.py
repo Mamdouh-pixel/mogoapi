@@ -3,7 +3,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from typing import Optional
 from collections import Counter  # To compute the mode (most frequent)
 from bson import ObjectId
-
+from textblob import TextBlob  # Import TextBlob for sentiment analysis
 
 app = FastAPI()
 
@@ -11,26 +11,32 @@ app = FastAPI()
 client = AsyncIOMotorClient("mongodb+srv://cc251313:cc251313@cluster0.ods2o.mongodb.net/studentsDB?retryWrites=true&w=majority&appName=Cluster0")
 db = client.studentsDB
 
-# Function to calculate sentiment
+# Function to calculate sentiment using TextBlob
 def calculate_sentiment(message: str) -> str:
-    # Simple sentiment analysis
-    if "good" in message.lower():
+    # Perform sentiment analysis using TextBlob
+    blob = TextBlob(message)
+    sentiment_score = blob.sentiment.polarity  # Get polarity score
+    
+    # Determine sentiment based on polarity score
+    if sentiment_score > 0:
         return "positive"
-    else:
+    elif sentiment_score < 0:
         return "negative"
+    else:
+        return "neutral"  # Optional: You can handle neutral cases too.
 
 # Helper function to convert MongoDB ObjectId to string
 def serialize_message(message):
     message['_id'] = str(message['_id'])  # Convert ObjectId to string
     return message
-    
+
 @app.get("/")
 async def root():
     return {"message": "Welcome to the FastAPI REST API!"}
 
 @app.get("/add_message")
 async def add_message(message: str, subject: Optional[str] = None, class_name: Optional[str] = None):
-    # Calculate sentiment for the message
+    # Calculate sentiment for the message using TextBlob
     sentiment = calculate_sentiment(message)
     
     # Store message with sentiment in MongoDB
@@ -75,7 +81,7 @@ async def analyze(group_by: Optional[str] = None):
             sentiment = message["sentiment"]
             if group_value:
                 if group_value not in grouped_sentiments:
-                    grouped_sentiments[group_value] = {"positive": 0, "negative": 0}
+                    grouped_sentiments[group_value] = {"positive": 0, "negative": 0, "neutral": 0}
                 grouped_sentiments[group_value][sentiment] += 1
         
         return {"mode_sentiment": mode_sentiment, "grouped_sentiments": grouped_sentiments}
