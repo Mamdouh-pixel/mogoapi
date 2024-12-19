@@ -3,7 +3,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from typing import Optional
 from collections import Counter  # To compute the mode (most frequent)
 from bson import ObjectId
-
+from transformers import pipeline  # Hugging Face's pipeline for sentiment analysis
 
 app = FastAPI()
 
@@ -11,10 +11,16 @@ app = FastAPI()
 client = AsyncIOMotorClient("mongodb+srv://cc251313:cc251313@cluster0.ods2o.mongodb.net/studentsDB?retryWrites=true&w=majority&appName=Cluster0")
 db = client.studentsDB
 
-# Function to calculate sentiment
+# Initialize sentiment analysis pipeline from Hugging Face Transformers
+sentiment_analyzer = pipeline("sentiment-analysis")
+
+# Function to calculate sentiment using a transformer model
 def calculate_sentiment(message: str) -> str:
-    # Simple sentiment analysis
-    if "good" in message.lower():
+    result = sentiment_analyzer(message)
+    # Get the sentiment label ('LABEL_0' for negative, 'LABEL_1' for positive)
+    sentiment = result[0]['label']
+    
+    if sentiment == "LABEL_1":
         return "positive"
     else:
         return "negative"
@@ -23,14 +29,14 @@ def calculate_sentiment(message: str) -> str:
 def serialize_message(message):
     message['_id'] = str(message['_id'])  # Convert ObjectId to string
     return message
-    
+
 @app.get("/")
 async def root():
     return {"message": "Welcome to the FastAPI REST API!"}
 
 @app.get("/add_message")
 async def add_message(message: str, subject: Optional[str] = None, class_name: Optional[str] = None):
-    # Calculate sentiment for the message
+    # Calculate sentiment for the message using transformer model
     sentiment = calculate_sentiment(message)
     
     # Store message with sentiment in MongoDB
