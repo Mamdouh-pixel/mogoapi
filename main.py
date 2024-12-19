@@ -5,7 +5,7 @@ from typing import Optional
 app = FastAPI()
 
 # MongoDB connection
-client = AsyncIOMotorClient("mongodb+srv://cc251313:cc251313@cluster0.ods2o.mongodb.net/")
+client = AsyncIOMotorClient("mongodb+srv://cc251313:cc251313@cluster0.ods2o.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 db = client.studentsDB
 
 @app.get("/")
