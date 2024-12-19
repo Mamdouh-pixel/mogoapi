@@ -2,6 +2,8 @@ from fastapi import FastAPI, HTTPException, Query
 from motor.motor_asyncio import AsyncIOMotorClient
 from typing import Optional
 from collections import Counter  # To compute the mode (most frequent)
+from bson import ObjectId
+
 
 app = FastAPI()
 
@@ -17,6 +19,11 @@ def calculate_sentiment(message: str) -> str:
     else:
         return "negative"
 
+# Helper function to convert MongoDB ObjectId to string
+def serialize_message(message):
+    message['_id'] = str(message['_id'])  # Convert ObjectId to string
+    return message
+    
 @app.get("/")
 async def root():
     return {"message": "Welcome to the FastAPI REST API!"}
@@ -39,9 +46,10 @@ async def add_message(message: str, subject: Optional[str] = None, class_name: O
 
 @app.get("/messages")
 async def get_messages():
-    # Retrieve all stored messages from the database
     messages = await db.messages.find().to_list(100)
-    return messages
+    # Convert each message's _id to string
+    serialized_messages = [serialize_message(message) for message in messages]
+    return serialized_messages
 
 @app.get("/analyze")
 async def analyze(group_by: Optional[str] = None):
