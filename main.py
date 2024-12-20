@@ -42,8 +42,9 @@ async def add_message(message: str, subject: Optional[str] = None, class_name: O
     # Store message with sentiment in MongoDB
     doc = {
         "message": message,
-        "subject": subject,
+        "name" : name,
         "age": age,
+        "subject": subject,
         "class_name": class_name,
         "sentiment": sentiment
     }
