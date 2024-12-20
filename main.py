@@ -35,7 +35,7 @@ async def root():
     return {"message": "Welcome to the FastAPI REST API!"}
 
 @app.get("/add_message")
-async def add_message(message: str, subject: Optional[str] = None, class_name: Optional[str] = None):
+async def add_message(message: str, name:str , age:int , subject: Optional[str] = None, class_name: Optional[str] = None):
     # Calculate sentiment for the message using TextBlob
     sentiment = calculate_sentiment(message)
     
