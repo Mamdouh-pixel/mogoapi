@@ -43,6 +43,7 @@ async def add_message(message: str, subject: Optional[str] = None, class_name: O
     doc = {
         "message": message,
         "subject": subject,
+        "age": age,
         "class_name": class_name,
         "sentiment": sentiment
     }
