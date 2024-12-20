@@ -99,3 +99,11 @@ async def analyze(group_by: Optional[str] = None):
         response["grouped_sentiments"] = grouped_sentiments
 
     return response
+
+@app.get("/clear")
+async def clear_messages():
+    # Delete all documents from the "messages" collection
+    result = await db.messages.delete_many({})
+    
+    # Return the count of deleted documents
+    return {"status": "All messages deleted successfully", "deleted_count": result.deleted_count}
