@@ -62,13 +62,25 @@ async def analyze(group_by: Optional[str] = None):
     # Retrieve all messages from the database
     messages = await db.messages.find().to_list(100)
     
-    # Calculate sentiment for each message
-    sentiment_data = [message["sentiment"] for message in messages]
+    # Filter out messages without a "sentiment" field
+    sentiment_data = [message["sentiment"] for message in messages if "sentiment" in message]
     
-    # Compute mode sentiment (most frequent sentiment)
+    if not sentiment_data:
+        raise HTTPException(status_code=404, detail="No messages with sentiment data found.")
+    
+    # Count all sentiment occurrences
     sentiment_counts = Counter(sentiment_data)
-    mode_sentiment = sentiment_counts.most_common(1)[0]  # Get most common sentiment
-    
+    mode_sentiment = sentiment_counts.most_common(1)[0]  # Get the most frequent sentiment
+
+    # Prepare response data
+    response = {
+        "mode_sentiment": mode_sentiment,  # Most frequent sentiment and its count
+        "sentiment_counts": {
+            "positive": sentiment_counts.get("positive", 0),  # Get count of positive sentiments
+            "negative": sentiment_counts.get("negative", 0),  # Get count of negative sentiments
+        }
+    }
+
     # Group sentiment analysis by subject or class_name if group_by is specified
     if group_by:
         if group_by not in ["class_name", "subject"]:
@@ -78,13 +90,12 @@ async def analyze(group_by: Optional[str] = None):
         grouped_sentiments = {}
         for message in messages:
             group_value = message.get(group_by)
-            sentiment = message["sentiment"]
-            if group_value:
+            sentiment = message.get("sentiment")
+            if group_value and sentiment:
                 if group_value not in grouped_sentiments:
-                    grouped_sentiments[group_value] = {"positive": 0, "negative": 0, "neutral": 0}
+                    grouped_sentiments[group_value] = {"positive": 0, "negative": 0}
                 grouped_sentiments[group_value][sentiment] += 1
         
-        return {"mode_sentiment": mode_sentiment, "grouped_sentiments": grouped_sentiments}
+        response["grouped_sentiments"] = grouped_sentiments
 
-    # Return the mode sentiment without grouping
-    return {"mode_sentiment": mode_sentiment}
+    return response
